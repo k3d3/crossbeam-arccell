@@ -26,7 +26,7 @@ impl<T> Stm<T> {
         loop {
             let shared = self.inner.load_consume(&guard);
             let data = unsafe { shared.as_ref() };
-            let res = match f(data) {
+            match f(data) {
                 Some(t) => {
                     let r = self.inner.compare_and_set(
                         shared,
