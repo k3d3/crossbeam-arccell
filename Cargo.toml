@@ -1,6 +1,9 @@
 [package]
-name = "cb-stm-temP"
+name = "cb-stm-temp"
 version = "0.1.0"
+description = "Software Transactional Memory system built on top of crossbeam-epoch"
+license = "MIT/Apache-2.0"
+readme = "README.md"
 authors = ["k3d3 <k@3d3.ca>"]
 
 [dependencies]
