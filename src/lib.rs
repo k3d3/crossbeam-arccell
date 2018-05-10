@@ -2,6 +2,8 @@ extern crate crossbeam_epoch;
 
 use crossbeam_epoch::{Atomic, Owned};
 use std::sync::atomic::Ordering;
+use std::ops::Deref;
+use std::fmt;
 
 pub struct Stm<T> {
     inner: Atomic<T>
@@ -35,20 +37,46 @@ impl<T> Stm<T> {
         }
     }
 
-    pub fn guard(&self) -> Guard<T> {
-        Guard { parent: self, inner: crossbeam_epoch::pin() }
+    pub fn load(&self) -> StmGuard<T> {
+        StmGuard { parent: self, inner: crossbeam_epoch::pin() }
     }
 }
 
-pub struct Guard<'a, T: 'a> {
+impl<T: fmt::Debug> fmt::Debug for Stm<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("StmGuard").field("data", self.load().deref()).finish()
+    }
+}
+
+impl<T: fmt::Display> fmt::Display for Stm<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.load().deref().fmt(f)
+    }
+}
+
+pub struct StmGuard<'a, T: 'a> {
     parent: &'a Stm<T>,
     inner: crossbeam_epoch::Guard
 }
 
-impl<'a, T> Guard<'a, T> {
-    pub fn load<'g>(&'g self) -> &'g T {
+impl<'a, T> Deref for StmGuard<'a, T> {
+    type Target = T;
+    fn deref(&self) -> &T {
         let shared = self.parent.inner.load(Ordering::Acquire, &self.inner);
         unsafe { shared.as_ref().unwrap() }
+    }
+}
+
+
+impl<'a, T: fmt::Debug> fmt::Debug for StmGuard<'a, T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("StmGuard").field("data", &self.deref()).finish()
+    }
+}
+
+impl<'a, T: fmt::Display> fmt::Display for StmGuard<'a, T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.deref().fmt(f)
     }
 }
 
@@ -59,8 +87,7 @@ mod tests {
     fn stm_test() {
         let stm = Stm::new(vec![1,2,3]);
         {
-            let guard = stm.guard();
-            let data = guard.load();
+            let data = stm.load();
             println!("{:?}", data);
         }
 
@@ -71,16 +98,14 @@ mod tests {
         });
 
         {
-            let guard = stm.guard();
-            let data = guard.load();
+            let data = stm.load();
             println!("{:?}", data);
         }
 
         stm.update(|_| vec![1]);
 
         {
-            let guard = stm.guard();
-            let data = guard.load();
+            let data = stm.load();
             println!("{:?}", data);
         }
     }
