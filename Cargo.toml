@@ -1,5 +1,5 @@
 [package]
-name = "crossbeam-stm"
+name = "cb-stm-temP"
 version = "0.1.0"
 authors = ["k3d3 <k@3d3.ca>"]
 
