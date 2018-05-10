@@ -10,9 +10,9 @@ _*THIS PROJECT IS NOT READY FOR GENERAL USAGE.*_
 ## Example
 
 ```rust
-extern crate crossbeam_stm;
+extern crate cb_stm_temp;
 
-use crossbeam_stm::Stm;
+use cb_stm_temp::Stm;
 
 // Create a new STM pointer with a Vec of numbers
 let stm = Stm::new(vec![1,2,3,4]);
