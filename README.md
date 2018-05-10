@@ -19,8 +19,7 @@ let stm = Stm::new(vec![1,2,3,4]);
 
 // Read from the STM
 {
-    let guard = stm.guard()
-    let data = guard.load()
+    let data = stm.load();
     println!("Current STM: {:?}", data);
 }
 
@@ -33,8 +32,7 @@ stm.update(|old| {
 
 // Read the new data
 {
-    let guard = stm.guard()
-    let data = guard.load()
+    let data = stm.load();
     println!("Current STM: {:?}", data);
 }
 
