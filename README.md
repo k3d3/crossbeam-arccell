@@ -15,7 +15,7 @@ extern crate crossbeam_stm;
 use crossbeam_stm::Stm;
 
 // Create a new STM pointer with a Vec of numbers
-let stm = Stm::new(Some(vec![1,2,3,4]);
+let stm = Stm::new(vec![1,2,3,4]);
 
 // Read from the STM
 {
@@ -25,13 +25,10 @@ let stm = Stm::new(Some(vec![1,2,3,4]);
 }
 
 // Update the STM pointer to add a new number
-stm.update(|value| {
-    // Since value is an Option, map over it
-    value.map(|data| {
-        let mut data = data.clone();
-        data.push(5);
-        data
-    }
+stm.update(|old| {
+    let mut new = old.clone();
+    new.push(5);
+    new
 });
 
 // Read the new data
