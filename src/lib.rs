@@ -1,68 +1,54 @@
 extern crate crossbeam_epoch;
 
-use crossbeam_epoch::Atomic;
-use crossbeam_epoch::Shared;
+use crossbeam_epoch::{Atomic, Owned};
 use std::sync::atomic::Ordering;
-use crossbeam_epoch::Owned;
 
-struct Stm<T> {
+pub struct Stm<T> {
     inner: Atomic<T>
 }
 
 impl<T> Stm<T> {
-    fn new(data: Option<T>) -> Stm<T> {
-        let inner = match data {
-            Some(t) => Atomic::new(t),
-            None => Atomic::null()
-        };
-        Stm { inner }
+    pub fn new(data: T) -> Stm<T> {
+        Stm { inner: Atomic::new(data) }
     }
 
-    fn update<F>(&self, f: F)
+    pub fn update<F>(&self, f: F)
     where
-        F: Fn(Option<&T>) -> Option<T> {
+        F: Fn(&T) -> T {
 
         let guard = crossbeam_epoch::pin();
+        guard.flush();
         loop {
-            let shared = self.inner.load_consume(&guard);
-            let data = unsafe { shared.as_ref() };
-            match f(data) {
-                Some(t) => {
-                    let r = self.inner.compare_and_set(
-                        shared,
-                        Owned::new(t),
-                        Ordering::AcqRel,
-                        &guard
-                    );
-                    if r.is_ok() { break }
-                },
-                None => {
-                    let r = self.inner.compare_and_set(
-                        shared,
-                        Shared::null(),
-                        Ordering::AcqRel,
-                        &guard
-                    );
-                    if r.is_ok() { break }
-                }
-            };
+            let shared = self.inner.load(Ordering::Acquire, &guard);
+            let data = unsafe { shared.as_ref().unwrap() };
+            let t = f(data);
+            let r = self.inner.compare_and_set(
+                shared,
+                Owned::new(t),
+                Ordering::AcqRel,
+                &guard
+            );
+            if let Ok(r) = r {
+                unsafe { guard.defer(move || r.into_owned()) }
+                break;
+            }
         }
     }
 
-    fn guard(&self) -> Guard<T> {
+    pub fn guard(&self) -> Guard<T> {
         Guard { parent: self, inner: crossbeam_epoch::pin() }
     }
 }
 
-struct Guard<'a, T: 'a> {
+pub struct Guard<'a, T: 'a> {
     parent: &'a Stm<T>,
     inner: crossbeam_epoch::Guard
 }
 
 impl<'a, T> Guard<'a, T> {
-    fn load<'g>(&'g self) -> Option<&'g T> {
-        let shared = self.parent.inner.load_consume(&self.inner);
-        unsafe { shared.as_ref() }
+    pub fn load<'g>(&'g self) -> &'g T {
+        let shared = self.parent.inner.load(Ordering::Acquire, &self.inner);
+        unsafe { shared.as_ref().unwrap() }
     }
 }
 
@@ -71,7 +57,7 @@ mod tests {
     use super::*;
     #[test]
     fn stm_test() {
-        let stm = Stm::new(Some(vec![1,2,3]));
+        let stm = Stm::new(vec![1,2,3]);
         {
             let guard = stm.guard();
             let data = guard.load();
@@ -79,11 +65,9 @@ mod tests {
         }
 
         stm.update(|v| {
-            v.map(|d| {
-                let mut d = d.clone();
-                d.push(4);
-                d
-            })
+            let mut v = v.clone();
+            v.push(4);
+            v
         });
 
         {
@@ -92,7 +76,7 @@ mod tests {
             println!("{:?}", data);
         }
 
-        stm.update(|_| None);
+        stm.update(|_| vec![1]);
 
         {
             let guard = stm.guard();
