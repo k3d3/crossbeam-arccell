@@ -5,6 +5,9 @@ description = "Software Transactional Memory system built on top of crossbeam-ep
 license = "MIT/Apache-2.0"
 readme = "README.md"
 authors = ["k3d3 <k@3d3.ca>"]
+repository = "https://github.com/k3d3/crossbeam-stm"
+homepage = "https://github.com/k3d3/crossbeam-stm"
+documentation = "https://docs.rs/cb-stm-temp"
 
 [dependencies]
 crossbeam-epoch = "0.4"
