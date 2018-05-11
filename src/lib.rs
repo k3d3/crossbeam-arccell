@@ -6,30 +6,28 @@ use std::ops::Deref;
 use std::fmt;
 
 pub struct Stm<T> {
-    inner: Atomic<T>
+    inner: Atomic<T>,
 }
 
 impl<T> Stm<T> {
     pub fn new(data: T) -> Stm<T> {
-        Stm { inner: Atomic::new(data) }
+        Stm {
+            inner: Atomic::new(data),
+        }
     }
 
     pub fn update<F>(&self, f: F)
     where
-        F: Fn(&T) -> T {
-
+        F: Fn(&T) -> T,
+    {
         let guard = crossbeam_epoch::pin();
         guard.flush();
         loop {
             let shared = self.inner.load(Ordering::Acquire, &guard);
             let data = unsafe { shared.as_ref().unwrap() };
             let t = f(data);
-            let r = self.inner.compare_and_set(
-                shared,
-                Owned::new(t),
-                Ordering::AcqRel,
-                &guard
-            );
+            let r = self.inner
+                .compare_and_set(shared, Owned::new(t), Ordering::AcqRel, &guard);
             if let Ok(r) = r {
                 unsafe { guard.defer(move || r.into_owned()) }
                 break;
@@ -38,13 +36,18 @@ impl<T> Stm<T> {
     }
 
     pub fn load(&self) -> StmGuard<T> {
-        StmGuard { parent: self, inner: crossbeam_epoch::pin() }
+        StmGuard {
+            parent: self,
+            inner: crossbeam_epoch::pin(),
+        }
     }
 }
 
 impl<T: fmt::Debug> fmt::Debug for Stm<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("StmGuard").field("data", self.load().deref()).finish()
+        f.debug_struct("StmGuard")
+            .field("data", self.load().deref())
+            .finish()
     }
 }
 
@@ -56,7 +59,7 @@ impl<T: fmt::Display> fmt::Display for Stm<T> {
 
 pub struct StmGuard<'a, T: 'a> {
     parent: &'a Stm<T>,
-    inner: crossbeam_epoch::Guard
+    inner: crossbeam_epoch::Guard,
 }
 
 impl<'a, T> Deref for StmGuard<'a, T> {
@@ -67,10 +70,11 @@ impl<'a, T> Deref for StmGuard<'a, T> {
     }
 }
 
-
 impl<'a, T: fmt::Debug> fmt::Debug for StmGuard<'a, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("StmGuard").field("data", &self.deref()).finish()
+        f.debug_struct("StmGuard")
+            .field("data", &self.deref())
+            .finish()
     }
 }
 
@@ -85,7 +89,7 @@ mod tests {
     use super::*;
     #[test]
     fn stm_test() {
-        let stm = Stm::new(vec![1,2,3]);
+        let stm = Stm::new(vec![1, 2, 3]);
         {
             let data = stm.load();
             println!("{:?}", data);
