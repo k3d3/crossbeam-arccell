@@ -87,6 +87,7 @@ impl<'a, T: fmt::Display> fmt::Display for StmGuard<'a, T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[test]
     fn stm_test() {
         let stm = Stm::new(vec![1, 2, 3]);
@@ -112,5 +113,71 @@ mod tests {
             let data = stm.load();
             println!("{:?}", data);
         }
+    }
+
+    // This test should not at all compile.
+    #[test]
+    fn test_nonstatic() {
+        use crossbeam_epoch::*;
+
+        struct StrRef<'a> {
+            r: &'a str,
+        }
+
+        impl<'a> Drop for StrRef<'a> {
+            fn drop(&mut self) {
+                println!("{}", self.r);
+            }
+        }
+
+        impl<'a> Clone for StrRef<'a> {
+            fn clone(&self) -> StrRef<'a> {
+                StrRef { r: self.r }
+            }
+        }
+
+        {
+            // We make a string on a local stack frame.
+            let a = String::from("Local string..");
+            let s = StrRef { r: &a };
+            let stm = Stm::new(s);
+
+            // We defer the string reference destruction.
+            stm.update(|curr: &StrRef| curr.clone() );
+        }
+        println!("Frame left!");
+
+        // On my compiler, the memory for "Local String.." will be overwritten with "PRINTMEINSTEAD".
+        String::from("PRINTMEINSTEAD");
+
+        // String reference is actually destroyed, but now it points to "PRINTMEINSTEAD"!
+        pin().flush();
+        pin().flush();
+
+        // Output:
+        //   Frame left!
+        //   PRINTMEINSTEAD
+    }
+
+    #[test]
+    fn test_no_leaks() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        let count = AtomicUsize::new(0);
+
+        struct DropCounter<'a> {
+            r: &'a AtomicUsize
+        }
+
+        impl<'a> Drop for DropCounter<'a> {
+            fn drop(&mut self) {
+                self.r.fetch_add(1, Ordering::SeqCst);
+            }
+        }
+
+        drop(Stm::new(DropCounter { r: &count }));
+
+        // We expect the value to have been dropped exactly once.
+        assert_eq!(count.load(Ordering::SeqCst), 1);
     }
 }
