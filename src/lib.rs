@@ -57,6 +57,14 @@ impl<T: 'static + Send + fmt::Display> fmt::Display for Stm<T> {
     }
 }
 
+impl<T: 'static + Send> Drop for Stm<T> {
+    fn drop(&mut self) {
+            let guard = crossbeam_epoch::pin();
+            let shared = self.inner.load(Ordering::Acquire, &guard);
+            unsafe { shared.into_owned(); }
+    }
+}
+
 pub struct StmGuard<'a, T: 'static + Send> {
     parent: &'a Stm<T>,
     inner: crossbeam_epoch::Guard,
