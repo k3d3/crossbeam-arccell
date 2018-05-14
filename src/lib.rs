@@ -100,7 +100,7 @@ mod tests {
         let stm = Stm::new(vec![1, 2, 3]);
         {
             let data = stm.load();
-            println!("{:?}", data);
+            assert_eq!(*data, vec![1,2,3]);
         }
 
         stm.update(|v| {
@@ -111,14 +111,14 @@ mod tests {
 
         {
             let data = stm.load();
-            println!("{:?}", data);
+            assert_eq!(*data, vec![1,2,3,4]);
         }
 
         stm.update(|_| vec![1]);
 
         {
             let data = stm.load();
-            println!("{:?}", data);
+            assert_eq!(*data, vec![1]);
         }
     }
 }
