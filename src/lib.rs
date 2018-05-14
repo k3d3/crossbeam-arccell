@@ -121,4 +121,26 @@ mod tests {
             assert_eq!(*data, vec![1]);
         }
     }
+
+    #[test]
+    fn test_no_leaks() {
+
+        //let count = AtomicUsize::new(0);
+        DROPCOUNTER.store(0, Ordering::SeqCst);
+
+        struct DropCounter<'a> {
+            r: &'a AtomicUsize
+        }
+
+        impl<'a> Drop for DropCounter<'a> {
+            fn drop(&mut self) {
+                self.r.fetch_add(1, Ordering::SeqCst);
+            }
+        }
+
+        drop(Stm::new(DropCounter { r: &DROPCOUNTER }));
+
+        // We expect the value to have been dropped exactly once.
+        assert_eq!(DROPCOUNTER.load(Ordering::SeqCst), 1);
+    }
 }
