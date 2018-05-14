@@ -4,9 +4,6 @@ Crossbeam-STM is a Software Transactional Memory implementation using crossbeam-
 It is meant to be as fast and consistent as possible for load speed, at the expense of having
 inconsistent-timed and potentially very slow writes.
 
-_*THIS PROJECT IS NOT READY FOR GENERAL USAGE.*_
-
-
 ## Example
 
 ```rust
@@ -45,6 +42,9 @@ Note that these benchmarks exist without any contention.
 Under contention: 
 - Crossbeam-STM's load will always be constant-time.
 - Crossbeam-STM's update will slow down if multiple threads attempt to write at the same time.
+
+The following benchmarks are available under the `benches/` directory:
+
 ```
 // Crossbeam-STM
 test cb_stm_load      ... bench:          12 ns/iter (+/- 0)
