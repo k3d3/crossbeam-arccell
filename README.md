@@ -44,7 +44,7 @@ Note that these benchmarks exist without any contention.
 
 Under contention: 
 - Crossbeam-STM's load will always be constant-time.
-- Crossbeam-STM's write will slow down if multiple threads attempt to write at the same time.
+- Crossbeam-STM's update will slow down if multiple threads attempt to write at the same time.
 ```
 // Crossbeam-STM
 test cb_stm_load      ... bench:          12 ns/iter (+/- 0)
