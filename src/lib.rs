@@ -5,11 +5,11 @@ use std::sync::atomic::Ordering;
 use std::ops::Deref;
 use std::fmt;
 
-pub struct Stm<T> {
+pub struct Stm<T: 'static + Send> {
     inner: Atomic<T>,
 }
 
-impl<T> Stm<T> {
+impl<T: 'static + Send> Stm<T> {
     pub fn new(data: T) -> Stm<T> {
         Stm {
             inner: Atomic::new(data),
@@ -43,7 +43,7 @@ impl<T> Stm<T> {
     }
 }
 
-impl<T: fmt::Debug> fmt::Debug for Stm<T> {
+impl<T: 'static + Send + fmt::Debug> fmt::Debug for Stm<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("StmGuard")
             .field("data", self.load().deref())
@@ -51,18 +51,18 @@ impl<T: fmt::Debug> fmt::Debug for Stm<T> {
     }
 }
 
-impl<T: fmt::Display> fmt::Display for Stm<T> {
+impl<T: 'static + Send + fmt::Display> fmt::Display for Stm<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.load().deref().fmt(f)
     }
 }
 
-pub struct StmGuard<'a, T: 'a> {
+pub struct StmGuard<'a, T: 'static + Send> {
     parent: &'a Stm<T>,
     inner: crossbeam_epoch::Guard,
 }
 
-impl<'a, T> Deref for StmGuard<'a, T> {
+impl<'a, T: 'static + Send> Deref for StmGuard<'a, T> {
     type Target = T;
     fn deref(&self) -> &T {
         let shared = self.parent.inner.load(Ordering::Acquire, &self.inner);
@@ -70,7 +70,7 @@ impl<'a, T> Deref for StmGuard<'a, T> {
     }
 }
 
-impl<'a, T: fmt::Debug> fmt::Debug for StmGuard<'a, T> {
+impl<'a, T: 'static + Send + fmt::Debug> fmt::Debug for StmGuard<'a, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("StmGuard")
             .field("data", &self.deref())
@@ -78,7 +78,7 @@ impl<'a, T: fmt::Debug> fmt::Debug for StmGuard<'a, T> {
     }
 }
 
-impl<'a, T: fmt::Display> fmt::Display for StmGuard<'a, T> {
+impl<'a, T: 'static + Send + fmt::Display> fmt::Display for StmGuard<'a, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.deref().fmt(f)
     }
