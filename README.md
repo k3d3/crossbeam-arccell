@@ -37,3 +37,20 @@ stm.update(|old| {
 }
 
 ```
+
+## Benchmarks
+
+Note that these benchmarks exist without any contention.
+```
+// Crossbeam-STM
+test cb_stm_load      ... bench:          12 ns/iter (+/- 0)
+test cb_stm_update    ... bench:         686 ns/iter (+/- 7)
+
+// RwLock in stdlib
+test rwlock_load      ... bench:          48 ns/iter (+/- 0)
+test rwlock_update    ... bench:          36 ns/iter (+/- 0)
+
+// RwLock in parking_lot
+test pl_rwlock_load   ... bench:          21 ns/iter (+/- 0)
+test pl_rwlock_update ... bench:          13 ns/iter (+/- 0)
+```
