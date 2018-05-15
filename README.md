@@ -80,6 +80,9 @@ The following benchmarks are available under the `benches/` directory:
 test cb_stm_load      ... bench:          12 ns/iter (+/- 0)
 test cb_stm_update    ... bench:         686 ns/iter (+/- 7)
 
+// Arc in stdlib
+test arc_load         ... bench:          13 ns/iter (+/- 0)
+
 // RwLock in stdlib
 test rwlock_load      ... bench:          48 ns/iter (+/- 0)
 test rwlock_update    ... bench:          36 ns/iter (+/- 0)

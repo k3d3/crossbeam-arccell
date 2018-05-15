@@ -62,3 +62,13 @@ fn pl_rwlock_update(b: &mut Bencher) {
         black_box(a.deref());
     })
 }
+
+#[bench]
+fn arc_load(b: &mut Bencher) {
+    use std::sync::Arc;
+    let arc = Arc::new(vec![1, 2, 3]);
+    b.iter(|| {
+        let a = arc.clone();
+        black_box(a.deref());
+    })
+}
