@@ -95,6 +95,10 @@ impl<'a, T: 'static + Send + fmt::Display> fmt::Display for StmGuard<'a, T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    static DROPCOUNTER: AtomicUsize = AtomicUsize::new(0);
+
     #[test]
     fn stm_test() {
         let stm = Stm::new(vec![1, 2, 3]);
@@ -125,7 +129,6 @@ mod tests {
     #[test]
     fn test_no_leaks() {
 
-        //let count = AtomicUsize::new(0);
         DROPCOUNTER.store(0, Ordering::SeqCst);
 
         struct DropCounter<'a> {
