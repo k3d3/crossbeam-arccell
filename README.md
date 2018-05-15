@@ -57,6 +57,12 @@ stm.update(|old| {
 // Set the STM pointer
 let data = vec![9,8,7,6];
 stm.set(data);
+
+// Read the new data, again
+{
+    let data = stm.load();
+    println!("Current STM: {:?}", data);
+}
 ```
 
 ## Benchmarks
