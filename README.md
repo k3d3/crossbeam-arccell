@@ -1,5 +1,8 @@
 # Crossbeam-STM
 
+[![crates.io](https://img.shields.io/crates/v/crossbeam-stm.svg)](https://crates.io/crates/crossbeam-stm)
+[![crossbeam-stm docs](https://docs.rs/crossbeam-stm/badge.svg)](https://docs.rs/crossbeam-stm)
+
 Crossbeam-STM is a Software Transactional Memory implementation using crossbeam-epoch for memory reclamation.
 It is meant to be as fast and consistent as possible for load speed, at the expense of having
 inconsistent-timed and potentially very slow writes.
