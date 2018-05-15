@@ -4,6 +4,24 @@ Crossbeam-STM is a Software Transactional Memory implementation using crossbeam-
 It is meant to be as fast and consistent as possible for load speed, at the expense of having
 inconsistent-timed and potentially very slow writes.
 
+The idea behind this STM is that we have an atomic pointer that is always pointing to valid data.
+This data should always be an atomic pointer dereference (and a pin) away.
+
+When the STM needs to be updated, the old value cannot be modified because it might be in use by other
+threads. Instead, the existing data must be cloned to a new location and modified there. Once a new value
+is ready, a compare-and-swap is performed on the atomic pointer, so all threads requesting data after
+that point will receive the newly-updated data.
+
+Loads should always be constant-time, even in the face of both load and update contention.
+
+Updates might take a long time, and the closure passed to it might run multiple times. This is because
+if the "old" value is updated before the closure finishes, the closure might overwrite up-to-date data
+and must be run again with said new data passed in. Additionally, memory reclamation of old STM values
+is performed at this point.
+
+If you want to set the STM data regardless of what is currently set, you can use the `set()` method.
+This call should be a lot quicker than update.
+
 ## Example
 
 ```rust
@@ -33,6 +51,9 @@ stm.update(|old| {
     println!("Current STM: {:?}", data);
 }
 
+// Set the STM pointer
+let data = vec![9,8,7,6];
+stm.set(data);
 ```
 
 ## Benchmarks

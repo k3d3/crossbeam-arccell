@@ -1,16 +1,16 @@
 #![feature(test)]
 
-extern crate test;
 extern crate crossbeam_stm;
 extern crate parking_lot;
+extern crate test;
 
-use test::{Bencher, black_box};
+use test::{black_box, Bencher};
 use crossbeam_stm::Stm;
 use std::ops::Deref;
 
 #[bench]
 fn cb_stm_load(b: &mut Bencher) {
-    let stm = Stm::new(vec![1,2,3]);
+    let stm = Stm::new(vec![1, 2, 3]);
     b.iter(|| {
         let a = stm.load();
         black_box(a.deref());
@@ -19,16 +19,14 @@ fn cb_stm_load(b: &mut Bencher) {
 
 #[bench]
 fn cb_stm_update(b: &mut Bencher) {
-    let stm = Stm::new(vec![1,2,3]);
-    b.iter(|| {
-        stm.update(|old| old.clone())
-    });
+    let stm = Stm::new(vec![1, 2, 3]);
+    b.iter(|| stm.update(|old| old.clone()));
 }
 
 #[bench]
 fn rwlock_load(b: &mut Bencher) {
     use std::sync::RwLock;
-    let lock = RwLock::new(vec![1,2,3]);
+    let lock = RwLock::new(vec![1, 2, 3]);
     b.iter(|| {
         let a = lock.read().unwrap();
         black_box(a.deref());
@@ -38,7 +36,7 @@ fn rwlock_load(b: &mut Bencher) {
 #[bench]
 fn rwlock_update(b: &mut Bencher) {
     use std::sync::RwLock;
-    let lock = RwLock::new(vec![1,2,3]);
+    let lock = RwLock::new(vec![1, 2, 3]);
     b.iter(|| {
         let a = lock.write().unwrap();
         black_box(a.deref());
@@ -48,7 +46,7 @@ fn rwlock_update(b: &mut Bencher) {
 #[bench]
 fn pl_rwlock_load(b: &mut Bencher) {
     use parking_lot::RwLock;
-    let lock = RwLock::new(vec![1,2,3]);
+    let lock = RwLock::new(vec![1, 2, 3]);
     b.iter(|| {
         let a = lock.read();
         black_box(a.deref());
@@ -58,10 +56,9 @@ fn pl_rwlock_load(b: &mut Bencher) {
 #[bench]
 fn pl_rwlock_update(b: &mut Bencher) {
     use parking_lot::RwLock;
-    let lock = RwLock::new(vec![1,2,3]);
+    let lock = RwLock::new(vec![1, 2, 3]);
     b.iter(|| {
         let a = lock.write();
         black_box(a.deref());
     })
 }
-
