@@ -1,7 +1,7 @@
 # Crossbeam-ArcCell
 
-[![crates.io](https://img.shields.io/crates/v/crossbeam-stm.svg)](https://crates.io/crates/crossbeam-arccell)
-[![crossbeam-arccell docs](https://docs.rs/crossbeam-stm/badge.svg)](https://docs.rs/crossbeam-arccell)
+[![crates.io](https://img.shields.io/crates/v/crossbeam-arccell.svg)](https://crates.io/crates/crossbeam-arccell)
+[![crossbeam-arccell docs](https://docs.rs/crossbeam-arccell/badge.svg)](https://docs.rs/crossbeam-arccell)
 
 Crossbeam-ArcCell is an updatable Arc implementation using crossbeam-epoch for memory reclamation.
 It is meant to be as fast and consistent as possible for load speed, at the expense of having

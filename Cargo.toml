@@ -1,6 +1,6 @@
 [package]
 name = "crossbeam-arccell"
-version = "0.6.3"
+version = "0.6.4"
 description = "Atomically updatable Arc"
 license = "MIT/Apache-2.0"
 readme = "README.md"
