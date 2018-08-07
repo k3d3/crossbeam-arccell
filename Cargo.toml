@@ -1,13 +1,13 @@
 [package]
-name = "crossbeam-stm"
-version = "0.6.1"
+name = "crossbeam-arccell"
+version = "0.6.2"
 description = "Atomically updatable Arc"
 license = "MIT/Apache-2.0"
 readme = "README.md"
 authors = ["k3d3 <k@3d3.ca>"]
-repository = "https://github.com/k3d3/crossbeam-stm"
-homepage = "https://github.com/k3d3/crossbeam-stm"
-documentation = "https://docs.rs/crossbeam-stm"
+repository = "https://github.com/k3d3/crossbeam-arccell"
+homepage = "https://github.com/k3d3/crossbeam-arccell"
+documentation = "https://docs.rs/crossbeam-arccell"
 
 [dependencies]
 crossbeam-epoch = "0.4"
