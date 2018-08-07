@@ -81,6 +81,27 @@ impl<T: 'static + Send + Sync> Stm<T> {
         }
     }
 
+    /// Update the STM in a fallible fashion.
+    pub fn update_fallible<F, E>(&self, f: F) -> Result<(), E>
+    where
+        F: Fn(&T) -> Result<T, E>,
+    {
+        let guard = crossbeam_epoch::pin();
+        guard.flush();
+        loop {
+            let shared = self.inner.load(Ordering::Acquire, &guard);
+            let data = unsafe { shared.as_ref().unwrap() };
+            let t = f(data)?;
+            let r = self.inner
+                .compare_and_set(shared, Owned::new(t), Ordering::AcqRel, &guard);
+            if let Ok(r) = r {
+                unsafe { guard.defer(move || r.into_owned()) }
+                break;
+            }
+        }
+        Ok(())
+    }
+
     /// Update the STM.
     ///
     /// This is done by passing the current STM value to a closure and
@@ -104,19 +125,7 @@ impl<T: 'static + Send + Sync> Stm<T> {
     where
         F: Fn(&T) -> T,
     {
-        let guard = crossbeam_epoch::pin();
-        guard.flush();
-        loop {
-            let shared = self.inner.load(Ordering::Acquire, &guard);
-            let data = unsafe { shared.as_ref().unwrap() };
-            let t = f(data);
-            let r = self.inner
-                .compare_and_set(shared, Owned::new(t), Ordering::AcqRel, &guard);
-            if let Ok(r) = r {
-                unsafe { guard.defer(move || r.into_owned()) }
-                break;
-            }
-        }
+        self.update_fallible(|t| Ok::<T, ()>(f(t))).unwrap()
     }
 
     /// Update the STM, ignoring the current value.
@@ -190,6 +199,14 @@ impl<T: 'static + Send + Sync> Drop for Stm<T> {
         let shared = self.inner.load(Ordering::Acquire, &guard);
         unsafe {
             shared.into_owned();
+        }
+    }
+}
+
+impl<T: 'static + Send + Sync> Clone for Stm<T> {
+    fn clone(&self) -> Stm<T> {
+        Stm {
+            inner: self.inner.clone()
         }
     }
 }
