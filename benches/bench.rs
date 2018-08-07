@@ -24,6 +24,24 @@ fn cb_stm_update(b: &mut Bencher) {
 }
 
 #[bench]
+fn cb_stm_update_no_reclaim(b: &mut Bencher) {
+    let stm = Stm::new(vec![1, 2, 3]);
+    b.iter(|| stm.update_no_reclaim(|old| old.clone()));
+}
+
+#[bench]
+fn cb_stm_set(b: &mut Bencher) {
+    let stm = Stm::new(vec![1, 2, 3]);
+    b.iter(|| stm.set(vec![1, 2, 4]));
+}
+
+#[bench]
+fn cb_stm_set_no_reclaim(b: &mut Bencher) {
+    let stm = Stm::new(vec![1, 2, 3]);
+    b.iter(|| stm.set_no_reclaim(vec![1, 2, 4]));
+}
+
+#[bench]
 fn rwlock_load(b: &mut Bencher) {
     use std::sync::RwLock;
     let lock = RwLock::new(vec![1, 2, 3]);

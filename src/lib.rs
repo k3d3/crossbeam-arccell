@@ -81,13 +81,14 @@ impl<T: 'static + Send + Sync> Stm<T> {
         }
     }
 
-    /// Update the STM in a fallible fashion.
-    pub fn update_fallible<F, E>(&self, f: F) -> Result<(), E>
+    fn update_fallible_inner<F, E>(&self, f: F, reclaim: bool) -> Result<(), E>
     where
         F: Fn(&T) -> Result<T, E>,
     {
         let guard = crossbeam_epoch::pin();
-        guard.flush();
+        if reclaim {
+            guard.flush();
+        }
         loop {
             let shared = self.inner.load(Ordering::Acquire, &guard);
             let data = unsafe { shared.as_ref().unwrap() };
@@ -125,7 +126,42 @@ impl<T: 'static + Send + Sync> Stm<T> {
     where
         F: Fn(&T) -> T,
     {
-        self.update_fallible(|t| Ok::<T, ()>(f(t))).unwrap()
+        self.update_fallible_inner(|t| Ok::<T, ()>(f(t)), true).unwrap()
+    }
+    
+    /// Update the STM in a fallible fashion.
+    pub fn update_fallible<F, E>(&self, f: F) -> Result<(), E>
+    where
+        F: Fn(&T) -> Result<T, E>,
+    {
+        self.update_fallible_inner(f, true)
+    }
+
+    /// Update the STM without reclaiming any memory.
+    /// Note that without calling reclaim() at some future point, this can cause a memory leak.
+    pub fn update_no_reclaim<F>(&self, f: F)
+    where
+        F: Fn(&T) -> T,
+    {
+        self.update_fallible_inner(|t| Ok::<T, ()>(f(t)), false).unwrap()
+    }
+
+    /// Update the STM in a fallible fashion without reclaiming any memory.
+    /// Note that without calling reclaim() at some future point, this can cause a memory leak.
+    pub fn update_fallible_no_reclaim<F, E>(&self, f: F) -> Result<(), E>
+    where
+        F: Fn(&T) -> Result<T, E>,
+    {
+        self.update_fallible_inner(f, false)
+    }
+
+    fn set_inner(&self, data: T, reclaim: bool) {
+        let guard = crossbeam_epoch::pin();
+        if reclaim {
+            guard.flush();
+        }
+        let r = self.inner.swap(Owned::new(data), Ordering::Release, &guard);
+        unsafe { guard.defer(move || r.into_owned()) }
     }
 
     /// Update the STM, ignoring the current value.
@@ -137,10 +173,19 @@ impl<T: 'static + Send + Sync> Stm<T> {
     /// stm.set(vec![9,8,7,6]);
     /// ```
     pub fn set(&self, data: T) {
+        self.set_inner(data, true)
+    }
+
+    /// Update the STM, ignoring the current value and not reclaiming any memory.
+    /// Note that without calling reclaim() at some future point, this can cause a memory leak.
+    pub fn set_no_reclaim(&self, data: T) {
+        self.set_inner(data, false)
+    }
+
+    /// Reclaim memory after calling `update_no_reclaim()`, `update_fallible_no_reclaim()`  or `set_no_reclaim()`.
+    pub fn reclaim(&self) {
         let guard = crossbeam_epoch::pin();
         guard.flush();
-        let r = self.inner.swap(Owned::new(data), Ordering::Release, &guard);
-        unsafe { guard.defer(move || r.into_owned()) }
     }
 
     /// Load the current value from the STM.
