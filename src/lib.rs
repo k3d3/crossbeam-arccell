@@ -1,3 +1,5 @@
+// Copyright 2018 k3d3 <k@3d3.ca>
+
 #![warn(missing_docs)]
 //! This library provides a Software Transactional Memory structure that
 //! can be used for sharing data among multiple threads in a way that is
